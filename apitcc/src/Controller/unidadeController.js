@@ -11,21 +11,23 @@ const endpoints = Router();
 
 
 
+import multer from 'multer';
 
-
-endpoints.post('/unidade', async (req, resp) =>{
-    try{
-        let unidade = req.body
-        let id = await inseriUnidadeService(unidade)
-        resp.send(id)
-    
+const upload = multer({ dest: 'uploads/' }); 
+endpoints.post('/unidade', autenticar, upload.single('foto'), async (req, resp) => {
+    try {
+        let unidade = req.body;
+        unidade.foto = req.file.path; 
+        let id = await db.inserirUnidade(unidade);
+        resp.send({ novoId: id });
     }
-    catch(err){
+    catch (err) {
         resp.status(400).send({
             erro: err.message
-        })
+        });
     }
-})
+});
+
 
 
 
