@@ -1,49 +1,44 @@
 import './adicionar-unidade.scss';
 import Cabecalho from '../../components/cabecalho/cabecalho.jsx';
 import Rodape from '../../components/rodape/rodape.jsx';
-import Aviso from '../../components/aviso/aviso.jsx';
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import Aviso from '../../components/aviso/aviso.jsx';
 import { useNavigate } from 'react-router-dom';
 
-export default function AddUnidade() {
-  const [imagem, setImagem] = useState(null);
+function AddUnidade() {
+  const navigate = useNavigate();
+
   const [endereco, setEndereco] = useState('');
   const [abre, setAbre] = useState('');
   const [fecha, setFecha] = useState('');
   const [url_maps, setUrl_maps] = useState('');
-
+  const [mensagemAviso, setmensagemAviso] = useState('');
+  const [AvisoTipo, setAvisoTipo] = useState('');
   const inputFileRef = useRef(null);
   const pictureImageRef = useRef(null);
   const pictureImageTxt = "Buscar imagem no dispositivo";
 
-  const navigate = useNavigate();
-
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagem(reader.result); 
-      };
-      reader.readAsDataURL(file);
-    } else {
-      setImagem(null);
-    }
+  const FecharAviso = () => {
+    setmensagemAviso('');
   };
 
   async function salvar() {
-    const formData = new FormData();
+    if (!inputFileRef.current || !inputFileRef.current.files.length) {
+      setmensagemAviso('Por favor, selecione uma imagem.');
+      setAvisoTipo('error');
+      return; 
+    }
     
-    // Adiciona a imagem e os demais campos ao FormData
-    formData.append('foto', inputFileRef.current.files[0]); // envia o arquivo diretamente
+    const formData = new FormData();
+    formData.append('foto', inputFileRef.current.files[0]);
     formData.append('endereco', endereco);
     formData.append('abre', abre);
     formData.append('fecha', fecha);
     formData.append('url_maps', url_maps);
-  
+
     const url = 'http://localhost:7000/unidade';
-  
+
     try {
       await axios.post(url, formData, {
         headers: {
@@ -59,16 +54,34 @@ export default function AddUnidade() {
       setAvisoTipo('error');
     }
   }
-  
-
-  const [mensagemAviso, setmensagemAviso] = useState('');
-  const [AvisoTipo, setAvisoTipo] = useState('');
-  const FecharAviso = () => {
-    setmensagemAviso('');
-  };
 
   useEffect(() => {
     pictureImageRef.current.innerHTML = pictureImageTxt;
+
+    const handleFileChange = (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const imgElement = document.createElement("img");
+          imgElement.src = event.target.result;
+          imgElement.classList.add("picture__img");
+
+          pictureImageRef.current.innerHTML = "";
+          pictureImageRef.current.appendChild(imgElement);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        pictureImageRef.current.innerHTML = pictureImageTxt;
+      }
+    };
+
+    const inputFile = inputFileRef.current;
+    inputFile.addEventListener("change", handleFileChange);
+
+    return () => {
+      inputFile.removeEventListener("change", handleFileChange);
+    };
   }, []);
 
   return (
@@ -83,29 +96,23 @@ export default function AddUnidade() {
         <Cabecalho />
       </header>
 
-      <div className="resto">
+      <div className='resto'>
         <div className="barra">
           <h1>Adicionar Unidades Maria Flor</h1>
         </div>
 
         <div className="adicionar">
-          <div className="imagem">
+          <div className='imagem'>
             <label className="picture" htmlFor="picture__input" tabIndex="0">
               <span className="picture__image" ref={pictureImageRef}></span>
             </label>
             <input
+              id="picture__input"  
               type="file"
-              accept="image/*"
-              name="picture__input"
-              id="picture__input"
-              ref={inputFileRef}
-              onChange={handleFileChange} //vixx
+              ref={inputFileRef}  
+              style={{ display: 'none' }}
+              accept="image/*"  
             />
-            {imagem && (
-              <div className="imagem-preview">
-                <img src={imagem} alt="Pré-visualização" className="picture__img" />
-              </div>
-            )}
           </div>
 
           <div className="interativo">
@@ -128,7 +135,7 @@ export default function AddUnidade() {
                   value={abre}
                   onChange={e => setAbre(e.target.value)}
                 />
-                <p>às</p>
+                <p>ás</p>
                 <input
                   type="time"
                   value={fecha}
@@ -142,7 +149,7 @@ export default function AddUnidade() {
                 <img src="./images/maps.png" alt="" width={20} />
                 <input
                   type="url"
-                  placeholder="URL da Localização da Empresa no Google Maps"
+                  placeholder='URL da Localização da Empresa no Google Maps'
                   value={url_maps}
                   onChange={e => setUrl_maps(e.target.value)}
                 />
@@ -160,3 +167,5 @@ export default function AddUnidade() {
     </div>
   );
 }
+
+export default AddUnidade;
